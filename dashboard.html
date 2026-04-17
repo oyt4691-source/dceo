@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StockInsight KR - 국내 주식 통합 현황판</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Noto+Sans+KR:wght@300;400;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans KR', 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 10px;
+        }
+
+        .card {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+
+        .up-color { color: #ef4444; } /* 국내는 상승이 빨강 */
+        .down-color { color: #3b82f6; } /* 국내는 하락이 파랑 */
+        
+        .bg-up { background-color: rgba(239, 68, 68, 0.1); }
+        .bg-down { background-color: rgba(59, 130, 246, 0.1); }
+
+        .tradingview-widget-container {
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="h-screen overflow-hidden flex flex-col">
+
+    <!-- Top Navigation -->
+    <header class="h-14 border-b border-slate-800 bg-slate-900/50 backdrop-blur-md flex items-center justify-between px-6 z-50">
+        <div class="flex items-center space-x-4">
+            <div class="text-red-500 text-2xl font-bold tracking-tighter">
+                <i class="fas fa-chart-line mr-2"></i>StockInsight <span class="text-slate-400 font-normal">KR</span>
+            </div>
+            <div class="hidden md:flex items-center bg-slate-800 rounded-lg px-3 py-1 text-sm border border-slate-700">
+                <i class="fas fa-search text-slate-500 mr-2"></i>
+                <input type="text" placeholder="국내 종목 코드/명 검색..." class="bg-transparent border-none focus:outline-none w-64 text-slate-200">
+            </div>
+        </div>
+        <div class="flex items-center space-x-4">
+            <div class="text-right hidden sm:block">
+                <div class="text-[10px] text-slate-400 uppercase tracking-widest font-bold">KOREA MARKET</div>
+                <div class="text-xs font-bold text-red-500 flex items-center justify-end">
+                    <span class="w-2 h-2 bg-red-500 rounded-full mr-1 animate-pulse"></span> 실시간 데이터 연결됨
+                </div>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-slate-400">KR</div>
+        </div>
+    </header>
+
+    <!-- Ticker Tape (KR Market Focus) -->
+    <div class="h-10 border-b border-slate-800 bg-slate-900">
+        <div class="tradingview-widget-container">
+            <div class="tradingview-widget-container__widget"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+            {
+                "symbols": [
+                { "proName": "KRX:KOSPI", "title": "코스피" },
+                { "proName": "KRX:KOSDAQ", "title": "코스닥" },
+                { "proName": "KRX:KOSPI200", "title": "코스피 200" },
+                { "proName": "FX_IDC:USDKRW", "title": "원/달러 환율" },
+                { "proName": "KRX:005930", "title": "삼성전자" },
+                { "proName": "KRX:000660", "title": "SK하이닉스" },
+                { "proName": "KRX:373220", "title": "LG에너지솔루션" },
+                { "proName": "KRX:207940", "title": "삼성바이오로직스" },
+                { "proName": "KRX:005380", "title": "현대차" }
+                ],
+                "showSymbolLogo": true,
+                "colorTheme": "dark",
+                "isTransparent": true,
+                "displayMode": "adaptive",
+                "locale": "ko"
+            }
+            </script>
+        </div>
+    </div>
+
+    <div class="flex-1 flex overflow-hidden">
+        
+        <!-- Left Sidebar (KR Menu) -->
+        <aside class="w-20 lg:w-64 border-r border-slate-800 flex flex-col py-6 bg-slate-900">
+            <nav class="flex-1 px-4 space-y-2">
+                <a href="#" class="flex items-center space-x-3 p-3 rounded-xl bg-red-600/10 text-red-500 font-semibold">
+                    <i class="fas fa-home w-6 text-center"></i>
+                    <span class="hidden lg:inline">국내 시장 홈</span>
+                </a>
+                <a href="#" class="flex items-center space-x-3 p-3 rounded-xl text-slate-400 hover:bg-slate-800">
+                    <i class="fas fa-list-ol w-6 text-center"></i>
+                    <span class="hidden lg:inline">시총 상위 100</span>
+                </a>
+                <a href="#" class="flex items-center space-x-3 p-3 rounded-xl text-slate-400 hover:bg-slate-800">
+                    <i class="fas fa-layer-group w-6 text-center"></i>
+                    <span class="hidden lg:inline">업종별 현황</span>
+                </a>
+                <a href="#" class="flex items-center space-x-3 p-3 rounded-xl text-slate-400 hover:bg-slate-800">
+                    <i class="fas fa-star w-6 text-center"></i>
+                    <span class="hidden lg:inline">관심 종목</span>
+                </a>
+                <div class="pt-4 pb-2"><div class="h-px bg-slate-800 mx-2"></div></div>
+                <a href="#" class="flex items-center space-x-3 p-3 rounded-xl text-slate-400 hover:bg-slate-800">
+                    <i class="fas fa-info-circle w-6 text-center"></i>
+                    <span class="hidden lg:inline">공시 정보 (DART)</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6">
+            
+            <!-- Market Summary Cards -->
+            <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="card p-4 border-l-4 border-l-red-500">
+                    <div class="text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">KOSPI</div>
+                    <div class="flex items-end justify-between">
+                        <div class="text-2xl font-bold tracking-tight">6,199.05</div>
+                        <div class="text-xs font-bold up-color">+0.43% <i class="fas fa-caret-up ml-1"></i></div>
+                    </div>
+                </div>
+                <div class="card p-4 border-l-4 border-l-blue-500">
+                    <div class="text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">KOSDAQ</div>
+                    <div class="flex items-end justify-between">
+                        <div class="text-2xl font-bold tracking-tight">1,162.89</div>
+                        <div class="text-xs font-bold text-slate-400">0.00% <i class="fas fa-minus ml-1"></i></div>
+                    </div>
+                </div>
+                <div class="card p-4 border-l-4 border-l-amber-500">
+                    <div class="text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">USD / KRW</div>
+                    <div class="flex items-end justify-between">
+                        <div class="text-2xl font-bold tracking-tight">1,479.91</div>
+                        <div class="text-xs font-bold up-color">+0.35% <i class="fas fa-caret-up ml-1"></i></div>
+                    </div>
+                </div>
+                <div class="card p-4 border-l-4 border-l-emerald-500">
+                    <div class="text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">거래대금 (조)</div>
+                    <div class="flex items-end justify-between">
+                        <div class="text-2xl font-bold tracking-tight">18.4</div>
+                        <div class="text-xs font-bold text-slate-400">KOSPI+KOSDAQ</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Main Domestic Stock Chart -->
+            <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 card h-[600px] flex flex-col">
+                    <div class="p-4 border-b border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-800/50 gap-4">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <h3 class="font-bold text-lg mr-2">메인 분석 차트</h3>
+                            <!-- Quick Switch Buttons -->
+                            <button onclick="changeChartSymbol('KRX:005930', '삼성전자')" class="px-3 py-1 rounded bg-red-600 text-white text-[11px] font-bold hover:bg-red-500 transition-colors">삼성전자</button>
+                            <button onclick="changeChartSymbol('KRX:000660', 'SK하이닉스')" class="px-3 py-1 rounded bg-slate-700 text-slate-300 text-[11px] font-bold hover:bg-slate-600 transition-colors">SK하이닉스</button>
+                            <button onclick="changeChartSymbol('KRX:005380', '현대차')" class="px-3 py-1 rounded bg-slate-700 text-slate-300 text-[11px] font-bold hover:bg-slate-600 transition-colors">현대차</button>
+                            <button onclick="changeChartSymbol('KRX:035420', 'NAVER')" class="px-3 py-1 rounded bg-slate-700 text-slate-300 text-[11px] font-bold hover:bg-slate-600 transition-colors">NAVER</button>
+                            <button onclick="changeChartSymbol('KRX:068270', '셀트리온')" class="px-3 py-1 rounded bg-slate-700 text-slate-300 text-[11px] font-bold hover:bg-slate-600 transition-colors">셀트리온</button>
+                        </div>
+                        <div class="flex items-center bg-slate-900 rounded-lg px-3 py-1.5 border border-slate-700 w-full sm:w-auto">
+                            <i class="fas fa-search text-slate-500 mr-2"></i>
+                            <input type="text" id="chart-search" placeholder="종목코드 입력 (예: 035720)" 
+                                class="bg-transparent border-none focus:outline-none text-xs text-slate-200 w-full sm:w-32"
+                                onkeypress="if(event.keyCode==13) searchSymbol()">
+                            <button onclick="searchSymbol()" class="text-[10px] text-blue-400 font-bold ml-2">이동</button>
+                        </div>
+                    </div>
+                    <div class="flex-1 w-full" id="tv-chart-container">
+                        <div id="tradingview_main" class="h-full"></div>
+                        <!-- 최신 TradingView 라이브러리 사용 -->
+                        <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+                        <script type="text/javascript">
+                        let currentWidget = null;
+
+                        function initTradingView(symbol = "KRX:005930") {
+                            // 기존 차트 제거 후 재생성 (라이선스 오류 방지)
+                            document.getElementById('tradingview_main').innerHTML = "";
+                            
+                            currentWidget = new TradingView.widget({
+                                "autosize": true,
+                                "symbol": symbol,
+                                "interval": "D",
+                                "timezone": "Asia/Seoul",
+                                "theme": "dark",
+                                "style": "1",
+                                "locale": "ko",
+                                "toolbar_bg": "#1e293b",
+                                "enable_publishing": false,
+                                "hide_top_toolbar": false,
+                                "hide_legend": false,
+                                "save_image": false,
+                                "container_id": "tradingview_main",
+                                "studies": [
+                                    "MASimple@tv-basicstudies",
+                                    "RSI@tv-basicstudies"
+                                ],
+                                "show_popup_button": true,
+                                "popup_width": "1000",
+                                "popup_height": "650",
+                                "support_host": "https://www.tradingview.com"
+                            });
+                        }
+
+                        function changeChartSymbol(symbol, name) {
+                            const buttons = document.querySelectorAll('button[onclick^="changeChartSymbol"]');
+                            buttons.forEach(btn => {
+                                if (btn.innerText === name) {
+                                    btn.classList.replace('bg-slate-700', 'bg-red-600');
+                                    btn.classList.replace('text-slate-300', 'text-white');
+                                } else {
+                                    btn.classList.replace('bg-red-600', 'bg-slate-700');
+                                    btn.classList.replace('text-white', 'text-slate-300');
+                                }
+                            });
+                            
+                            initTradingView(symbol);
+                        }
+
+                        function searchSymbol() {
+                            const input = document.getElementById('chart-search');
+                            let code = input.value.trim();
+                            if (!code) return;
+
+                            // 국내 종목 코드(6자리 숫자)인 경우 KRX: 자동 추가
+                            if (/^\d{6}$/.test(code)) {
+                                code = "KRX:" + code;
+                            } else if (/^\d+$/.test(code)) {
+                                code = "KRX:" + code;
+                            }
+                            
+                            initTradingView(code);
+                            input.value = "";
+                        }
+
+                        // DOM 로드 후 실행
+                        document.addEventListener('DOMContentLoaded', function() {
+                            initTradingView();
+                        });
+                        </script>
+                    </div>
+                </div>
+
+                <!-- Market Hotlist / Heatmap placeholder -->
+                <div class="card flex flex-col">
+                    <div class="p-4 border-b border-slate-700 bg-slate-800/50">
+                        <h3 class="font-bold flex items-center">
+                            <i class="fas fa-fire mr-2 text-red-500"></i>시장 주도주 (실시간)
+                        </h3>
+                    </div>
+                    <div class="flex-1 overflow-y-auto custom-scrollbar">
+                        <div class="tradingview-widget-container">
+                            <div class="tradingview-widget-container__widget"></div>
+                            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-hotlists.js" async>
+                            {
+                                "colorTheme": "dark",
+                                "dateRange": "12M",
+                                "exchange": "KRX",
+                                "showChart": true,
+                                "locale": "ko",
+                                "largeChartHeight": -1,
+                                "isTransparent": true,
+                                "showSymbolLogo": true,
+                                "showFloatingTooltip": false,
+                                "width": "100%",
+                                "height": "100%"
+                            }
+                            </script>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Top 100 Companies List (Domestic) -->
+            <section class="card p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-bold flex items-center">
+                        <i class="fas fa-trophy mr-2 text-yellow-500"></i>국내 시가총액 상위 100대 기업 요약
+                    </h3>
+                    <button class="text-xs bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 hover:bg-slate-700">전체 보기 <i class="fas fa-chevron-right ml-1"></i></button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead class="text-slate-500 border-b border-slate-800">
+                            <tr>
+                                <th class="pb-3 pr-4 font-bold text-xs uppercase tracking-widest">순위/종목</th>
+                                <th class="pb-3 px-4 text-right font-bold text-xs uppercase tracking-widest">현재가</th>
+                                <th class="pb-3 px-4 text-right font-bold text-xs uppercase tracking-widest">전일대비</th>
+                                <th class="pb-3 px-4 text-right font-bold text-xs uppercase tracking-widest">시가총액</th>
+                                <th class="pb-3 px-4 text-right font-bold text-xs uppercase tracking-widest">외인비중</th>
+                                <th class="pb-3 pl-4 text-right font-bold text-xs uppercase tracking-widest">PER</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/50">
+                            <tr class="hover:bg-slate-800/30 transition-colors">
+                                <td class="py-4 pr-4">
+                                    <div class="flex items-center space-x-3">
+                                        <span class="text-slate-500 font-bold w-4">1</span>
+                                        <div class="font-bold">삼성전자 <span class="text-[10px] text-slate-500 ml-1">005930</span></div>
+                                    </div>
+                                </td>
+                                <td class="py-4 px-4 text-right font-bold">216,500</td>
+                                <td class="py-4 px-4 text-right down-color">-0.46%</td>
+                                <td class="py-4 px-4 text-right">504.4조</td>
+                                <td class="py-4 px-4 text-right">55.2%</td>
+                                <td class="py-4 pl-4 text-right">15.8</td>
+                            </tr>
+                            <tr class="hover:bg-slate-800/30 transition-colors">
+                                <td class="py-4 pr-4">
+                                    <div class="flex items-center space-x-3">
+                                        <span class="text-slate-500 font-bold w-4">2</span>
+                                        <div class="font-bold">SK하이닉스 <span class="text-[10px] text-slate-500 ml-1">000660</span></div>
+                                    </div>
+                                </td>
+                                <td class="py-4 px-4 text-right font-bold">1,132,000</td>
+                                <td class="py-4 px-4 text-right up-color">+1.99%</td>
+                                <td class="py-4 px-4 text-right">132.8조</td>
+                                <td class="py-4 px-4 text-right">53.1%</td>
+                                <td class="py-4 pl-4 text-right">32.1</td>
+                            </tr>
+                            <tr class="hover:bg-slate-800/30 transition-colors">
+                                <td class="py-4 pr-4">
+                                    <div class="flex items-center space-x-3">
+                                        <span class="text-slate-500 font-bold w-4">3</span>
+                                        <div class="font-bold">LG에너지솔루션 <span class="text-[10px] text-slate-500 ml-1">373220</span></div>
+                                    </div>
+                                </td>
+                                <td class="py-4 px-4 text-right font-bold">384,500</td>
+                                <td class="py-4 px-4 text-right down-color">-1.22%</td>
+                                <td class="py-4 px-4 text-right">89.9조</td>
+                                <td class="py-4 px-4 text-right">4.8%</td>
+                                <td class="py-4 pl-4 text-right">64.2</td>
+                            </tr>
+                            <tr class="hover:bg-slate-800/30 transition-colors">
+                                <td class="py-4 pr-4">
+                                    <div class="flex items-center space-x-3">
+                                        <span class="text-slate-500 font-bold w-4">4</span>
+                                        <div class="font-bold">삼성바이오로직스 <span class="text-[10px] text-slate-500 ml-1">207940</span></div>
+                                    </div>
+                                </td>
+                                <td class="py-4 px-4 text-right font-bold">812,000</td>
+                                <td class="py-4 px-4 text-right up-color">+0.85%</td>
+                                <td class="py-4 px-4 text-right">57.8조</td>
+                                <td class="py-4 px-4 text-right">10.4%</td>
+                                <td class="py-4 pl-4 text-right">52.4</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+        <!-- Right Sidebar (KR Local News & Events) -->
+        <aside class="hidden xl:flex w-80 border-l border-slate-800 bg-slate-900 flex-col overflow-hidden">
+            <div class="p-6 border-b border-slate-800">
+                <h3 class="font-bold flex items-center mb-4">
+                    <i class="fas fa-bullhorn text-red-500 mr-2"></i>국내 주요 공시/속보
+                </h3>
+                <div class="space-y-4">
+                    <div class="p-3 bg-slate-800 rounded-lg border border-slate-700 cursor-pointer hover:border-red-500 transition-colors">
+                        <div class="text-[10px] text-slate-500 mb-1">DART • 10분 전</div>
+                        <div class="text-sm font-medium leading-snug">삼성전자, 1분기 영업이익 전년 대비 931% 증가... 어닝 서프라이즈</div>
+                    </div>
+                    <div class="p-3 bg-slate-800 rounded-lg border border-slate-700 cursor-pointer hover:border-red-500 transition-colors">
+                        <div class="text-[10px] text-slate-500 mb-1">한국경제 • 35분 전</div>
+                        <div class="text-sm font-medium leading-snug">정부, '기업 밸류업 프로그램' 세제 혜택 가이드라인 발표 임박</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex-1 overflow-hidden flex flex-col">
+                <div class="p-4 bg-slate-800/50 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-800">실시간 경제 지표</div>
+                <div class="flex-1 overflow-y-auto custom-scrollbar">
+                    <div class="tradingview-widget-container">
+                        <div class="tradingview-widget-container__widget"></div>
+                        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-quotes.js" async>
+                        {
+                            "symbols": [
+                                { "name": "KRX:KOSPI" },
+                                { "name": "KRX:KOSDAQ" },
+                                { "name": "FX_IDC:USDKRW" },
+                                { "name": "TVC:US10Y" },
+                                { "name": "TVC:GOLD" }
+                            ],
+                            "showSymbolLogo": true,
+                            "colorTheme": "dark",
+                            "isTransparent": true,
+                            "locale": "ko",
+                            "width": "100%",
+                            "height": "100%"
+                        }
+                        </script>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+</body>
+</html>

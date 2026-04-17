@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>럭키픽 (LuckyPick) - 로또 번호 생성기</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f0f4f8;
+        }
+
+        .ball {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            box-shadow: inset -3px -3px 6px rgba(0,0,0,0.2), 2px 2px 5px rgba(0,0,0,0.1);
+            font-size: 1.1rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .ball.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 로또 번호별 색상 */
+        .ball-yellow { background: radial-gradient(circle at 30% 30%, #fbc02d, #f9a825); } /* 1-10 */
+        .ball-blue { background: radial-gradient(circle at 30% 30%, #448aff, #2979ff); }   /* 11-20 */
+        .ball-red { background: radial-gradient(circle at 30% 30%, #ff5252, #ff1744); }    /* 21-30 */
+        .ball-gray { background: radial-gradient(circle at 30% 30%, #9e9e9e, #757575); }   /* 31-40 */
+        .ball-green { background: radial-gradient(circle at 30% 30%, #4caf50, #388e3c); }  /* 41-45 */
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            transition: transform 0.1s active;
+        }
+        .btn-primary:active { transform: scale(0.95); }
+
+        .gold-accent { color: #d4af37; }
+        .bg-gold-light { background-color: #fffdf0; }
+    </style>
+</head>
+<body class="min-h-screen pb-10">
+
+    <!-- Header -->
+    <header class="bg-blue-900 text-white p-4 shadow-lg sticky top-0 z-50">
+        <div class="max-w-md mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold tracking-tight"><i class="fas fa-clover gold-accent mr-2"></i>LuckyPick <span class="text-sm font-normal opacity-75">v1.0</span></h1>
+            <button onclick="toggleHistory()" class="text-white hover:text-blue-200 transition-colors">
+                <i class="fas fa-history text-lg"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-md mx-auto px-4 mt-6">
+        
+        <!-- Result Card -->
+        <div class="bg-white rounded-3xl shadow-xl p-8 mb-6 border border-blue-50 relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-4 opacity-5">
+                <i class="fas fa-ticket-alt text-6xl rotate-12"></i>
+            </div>
+            
+            <h2 class="text-center text-gray-500 mb-6 font-medium tracking-widest uppercase text-xs">이번 주 행운의 번호</h2>
+            
+            <div id="number-container" class="flex justify-between items-center mb-8 h-12">
+                <!-- Numbers will appear here -->
+                <div class="text-gray-300 w-full text-center italic">번호를 생성해 주세요</div>
+            </div>
+
+            <div id="stats-container" class="hidden flex justify-center space-x-4 text-xs font-bold text-gray-400 mb-8 border-t pt-4">
+                <span id="stat-sum">총합: --</span>
+                <span id="stat-evenodd">홀짝: --</span>
+            </div>
+
+            <button id="generate-btn" class="w-full btn-primary text-white py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-xl transition-all mb-4">
+                원터치 번호 생성
+            </button>
+            <button id="save-btn" class="hidden w-full bg-gray-100 text-gray-600 py-3 rounded-2xl font-medium hover:bg-gray-200 transition-all text-sm">
+                보관함에 저장하기
+            </button>
+        </div>
+
+        <!-- Filter Settings -->
+        <div class="bg-white rounded-3xl shadow-md p-6 mb-6">
+            <h3 class="font-bold text-gray-700 mb-4 flex items-center">
+                <i class="fas fa-sliders-h mr-2 text-blue-600"></i>조건 설정
+            </h3>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase mb-1 block">반드시 포함할 숫자 (최대 3개)</label>
+                    <input type="text" id="include-numbers" placeholder="예: 7, 21, 33" 
+                        class="w-full bg-blue-50 border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase mb-1 block">제외할 숫자 (최대 10개)</label>
+                    <input type="text" id="exclude-numbers" placeholder="예: 4, 13, 44" 
+                        class="w-full bg-red-50 border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-red-500 outline-none transition-all">
+                </div>
+            </div>
+            <p class="text-[10px] text-gray-400 mt-3">* 숫자는 쉼표(,)로 구분하여 입력해 주세요.</p>
+        </div>
+
+        <!-- Saved History (Hidden by default, toggled by icon) -->
+        <div id="history-section" class="hidden space-y-3 mt-6">
+            <div class="flex justify-between items-center px-1">
+                <h3 class="font-bold text-gray-700">나의 보관함</h3>
+                <button onclick="clearHistory()" class="text-xs text-red-400 hover:text-red-600">전체 삭제</button>
+            </div>
+            <div id="history-list" class="space-y-3">
+                <!-- Saved numbers will appear here -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full text-sm shadow-2xl opacity-0 transition-opacity pointer-events-none z-[100]">
+        저장되었습니다!
+    </div>
+
+    <script>
+        const generateBtn = document.getElementById('generate-btn');
+        const saveBtn = document.getElementById('save-btn');
+        const numberContainer = document.getElementById('number-container');
+        const statsContainer = document.getElementById('stats-container');
+        const historySection = document.getElementById('history-section');
+        const historyList = document.getElementById('history-list');
+        const toast = document.getElementById('toast');
+
+        let currentNumbers = [];
+
+        // 로또 공 색상 결정
+        function getBallColorClass(num) {
+            if (num <= 10) return 'ball-yellow';
+            if (num <= 20) return 'ball-blue';
+            if (num <= 30) return 'ball-red';
+            if (num <= 40) return 'ball-gray';
+            return 'ball-green';
+        }
+
+        // 토스트 메시지
+        function showToast(msg) {
+            toast.innerText = msg;
+            toast.classList.replace('opacity-0', 'opacity-100');
+            setTimeout(() => toast.classList.replace('opacity-100', 'opacity-0'), 2000);
+        }
+
+        // 입력값 파싱 (숫자 배열로 변환)
+        function parseInput(id) {
+            const val = document.getElementById(id).value.trim();
+            if (!val) return [];
+            return val.split(',')
+                .map(v => parseInt(v.trim()))
+                .filter(v => !isNaN(v) && v >= 1 && v <= 45);
+        }
+
+        // 번호 생성 로직
+        function generateLuckyNumbers() {
+            let include = [...new Set(parseInput('include-numbers'))].slice(0, 3);
+            let exclude = [...new Set(parseInput('exclude-numbers'))].slice(0, 10);
+
+            // 포함수와 제외수가 겹치면 제외수에서 제거 (포함수 우선)
+            exclude = exclude.filter(num => !include.includes(num));
+
+            const pool = [];
+            for (let i = 1; i <= 45; i++) {
+                if (!exclude.includes(i) && !include.includes(i)) {
+                    pool.push(i);
+                }
+            }
+
+            // 남은 숫자가 부족한 경우 예외 처리
+            if (pool.length < (6 - include.length)) {
+                alert("제외수가 너무 많아 번호를 생성할 수 없습니다.");
+                return null;
+            }
+
+            // 랜덤 추출
+            const result = [...include];
+            while (result.length < 6) {
+                const randomIndex = Math.floor(Math.random() * pool.length);
+                result.push(pool.splice(randomIndex, 1)[0]);
+            }
+
+            return result.sort((a, b) => a - b);
+        }
+
+        // 화면 렌더링
+        function renderNumbers(numbers) {
+            numberContainer.innerHTML = '';
+            numbers.forEach((num, index) => {
+                const ball = document.createElement('div');
+                ball.className = `ball ${getBallColorClass(num)}`;
+                ball.innerText = num;
+                numberContainer.appendChild(ball);
+                
+                // 순차적 애니메이션
+                setTimeout(() => ball.classList.add('show'), index * 100);
+            });
+
+            // 통계 계산
+            const sum = numbers.reduce((a, b) => a + b, 0);
+            const even = numbers.filter(n => n % 2 === 0).length;
+            const odd = 6 - even;
+
+            document.getElementById('stat-sum').innerText = `총합: ${sum}`;
+            document.getElementById('stat-evenodd').innerText = `홀짝: ${odd}:${even}`;
+            
+            statsContainer.classList.remove('hidden');
+            saveBtn.classList.remove('hidden');
+        }
+
+        // 번호 저장 로직
+        function saveToHistory() {
+            if (currentNumbers.length !== 6) return;
+            
+            const savedData = JSON.parse(localStorage.getItem('lucky_picks') || '[]');
+            const timestamp = new Date().toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            
+            savedData.unshift({ numbers: currentNumbers, date: timestamp });
+            localStorage.setItem('lucky_picks', JSON.stringify(savedData.slice(0, 50))); // 최대 50개 유지
+            
+            renderHistory();
+            showToast("보관함에 저장되었습니다!");
+            saveBtn.classList.add('hidden');
+        }
+
+        // 저장 목록 렌더링
+        function renderHistory() {
+            const savedData = JSON.parse(localStorage.getItem('lucky_picks') || '[]');
+            historyList.innerHTML = '';
+
+            if (savedData.length === 0) {
+                historyList.innerHTML = '<div class="text-center py-10 text-gray-400 text-sm">보관된 번호가 없습니다.</div>';
+                return;
+            }
+
+            savedData.forEach((item, idx) => {
+                const div = document.createElement('div');
+                div.className = "bg-white p-4 rounded-2xl shadow-sm flex flex-col space-y-2 border border-blue-50";
+                
+                let ballsHtml = item.numbers.map(n => 
+                    `<span class="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-white ${getBallColorClass(n)} shadow-sm">${n}</span>`
+                ).join('');
+
+                div.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] font-bold text-gray-300 uppercase">${item.date}</span>
+                        <button onclick="deleteItem(${idx})" class="text-gray-300 hover:text-red-400"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="flex justify-between">${ballsHtml}</div>
+                `;
+                historyList.appendChild(div);
+            });
+        }
+
+        function deleteItem(idx) {
+            const savedData = JSON.parse(localStorage.getItem('lucky_picks') || '[]');
+            savedData.splice(idx, 1);
+            localStorage.setItem('lucky_picks', JSON.stringify(savedData));
+            renderHistory();
+        }
+
+        function clearHistory() {
+            if(confirm("보관함을 모두 비울까요?")) {
+                localStorage.removeItem('lucky_picks');
+                renderHistory();
+            }
+        }
+
+        function toggleHistory() {
+            historySection.classList.toggle('hidden');
+            if (!historySection.classList.contains('hidden')) {
+                historySection.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // 초기화
+        generateBtn.addEventListener('click', () => {
+            const result = generateLuckyNumbers();
+            if (result) {
+                currentNumbers = result;
+                renderNumbers(result);
+            }
+        });
+
+        saveBtn.addEventListener('click', saveToHistory);
+
+        // 초기 데이터 로드
+        renderHistory();
+    </script>
+</body>
+</html>
